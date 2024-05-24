@@ -4,9 +4,8 @@ import requests
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
-
 class urlDownloader(object):
-    """ Download the webpage components base on the input url."""
+    """ Download the webpage components based on the input URL."""
     def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True):
         self.soup = None
         self.imgFlg = imgFlg
@@ -16,12 +15,12 @@ class urlDownloader(object):
         self.session = requests.Session()
         
     def savePage(self, url, pagefolder='page'):
-        """ Save the web page components based on the input url and dir name.
+        """ Save the web page components based on the input URL and dir name.
         Args:
-            url ([try]): web url string.
+            url (str): web URL string.
             pagefolder (str, optional): path to save the web components.
         Returns:
-            [bool]: whether the components saved successfully.
+            bool: whether the components saved successfully.
         """
         try:
             response = self.session.get(url)
@@ -38,7 +37,7 @@ class urlDownloader(object):
                 file.write(self.soup.prettify('utf-8'))
             return True
         except Exception as e:
-            print("> savePage(): Create files failed: %s." % str(e))
+            print(f"> savePage(): Create files failed: {str(e)}.")
             return False
 
     def _soupfindnSave(self, url, pagefolder, tag2find='img', inner='src'):
@@ -64,7 +63,7 @@ class urlDownloader(object):
                 if not os.path.isfile(filepath):
                     with open(filepath, 'wb') as file:
                         filebin = self.session.get(fileurl)
-                        if len(filebin.content) > 0:  # filter the empty file(imge not found)
+                        if len(filebin.content) > 0:  # filter the empty file (image not found)
                             file.write(filebin.content)
             except Exception as exc:
                 print(exc, file=sys.stderr)

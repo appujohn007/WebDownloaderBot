@@ -3,7 +3,8 @@ import re
 import requests
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
-from tqdm import tqdm
+from tqdm import tqdm  # For progress indicator
+
 
 class urlDownloader(object):
     """ Download the webpage components based on the input URL."""
@@ -42,29 +43,29 @@ class urlDownloader(object):
             return False
 
     def _soupfindnSave(self, url, pagefolder, tag2find='img', inner='src'):
-    """ Saves on specified pagefolder all tag2find objects. """
-    pagefolder = os.path.join(pagefolder, tag2find)
-    if not os.path.exists(pagefolder):
-        os.mkdir(pagefolder)
-    elements = self.soup.findAll(tag2find)
-    for res in tqdm(elements, desc=f"Downloading {tag2find}"):
-        try:
-            if not res.has_attr(inner):
-                continue  # check if inner tag (file object) exists
-            # clean special chars such as '@, # ? <>'
-            filename = re.sub(r'\W+', '.', os.path.basename(res[inner]))
-            # Added the '.html' for the html file in the href
-            if tag2find == 'link' and (not any(ext in filename for ext in self.linkType)):
-                filename += '.html'
-            fileurl = urljoin(url, res.get(inner))
-            filepath = os.path.join(pagefolder, filename)
-            # rename html ref so can move html and folder of files anywhere
-            res[inner] = os.path.join(os.path.basename(pagefolder), filename)
-            # create the file.
-            if not os.path.isfile(filepath):
-                with open(filepath, 'wb') as file:
-                    filebin = self.session.get(fileurl)
-                    if len(filebin.content) > 0:  # filter the empty file (image not found)
-                        file.write(filebin.content)
-        except Exception as exc:
-            print(exc, file=sys.stderr)
+        """ Saves on specified pagefolder all tag2find objects. """
+        pagefolder = os.path.join(pagefolder, tag2find)
+        if not os.path.exists(pagefolder):
+            os.mkdir(pagefolder)
+        elements = self.soup.findAll(tag2find)
+        for res in tqdm(elements, desc=f"Downloading {tag2find}"):
+            try:
+                if not res.has_attr(inner):
+                    continue  # check if inner tag (file object) exists
+                # clean special chars such as '@, # ? <>'
+                filename = re.sub(r'\W+', '.', os.path.basename(res[inner]))
+                # Added the '.html' for the html file in the href
+                if tag2find == 'link' and (not any(ext in filename for ext in self.linkType)):
+                    filename += '.html'
+                fileurl = urljoin(url, res.get(inner))
+                filepath = os.path.join(pagefolder, filename)
+                # rename html ref so can move html and folder of files anywhere
+                res[inner] = os.path.join(os.path.basename(pagefolder), filename)
+                # create the file.
+                if not os.path.isfile(filepath):
+                    with open(filepath, 'wb') as file:
+                        filebin = self.session.get(fileurl)
+                        if len(filebin.content) > 0:  # filter the empty file (image not found)
+                            file.write(filebin.content)
+            except Exception as exc:
+                print(exc, file=sys.stderr)

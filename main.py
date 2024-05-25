@@ -71,7 +71,7 @@ async def webdl(_, m):
     auth = (credentials['username'], credentials['password']) if credentials else None
 
     msg = await m.reply('Processing...')
-    asyncio.create_task(send_progress(msg, m.chat.id, "Processing..."))
+    progress_task = asyncio.create_task(send_progress(msg, m.chat.id, "Processing..."))
 
     imgFlg, linkFlg, scriptFlg = parse_components(m.text)
     name = dir = str(m.chat.id)
@@ -81,7 +81,9 @@ async def webdl(_, m):
     obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, file_size_limit=10*1024*1024, auth=auth)
     res, summary = obj.savePage(url, dir)
     if not res:
-        return await msg.edit_text('Something went wrong!')
+        await msg.edit_text('Something went wrong!')
+        progress_task.cancel()
+        return
 
     shutil.make_archive(name, 'zip', base_dir=dir)
     await m.reply_document(name+'.zip', caption=summary)
@@ -89,6 +91,7 @@ async def webdl(_, m):
 
     shutil.rmtree(dir)
     os.remove(name+'.zip')
+    progress_task.cancel()
 
 def is_valid_url(url):
     try:
@@ -111,8 +114,11 @@ async def send_progress(msg, chat_id, initial_text):
             try:
                 await Bot.edit_message_text(chat_id=chat_id, message_id=msg.id, text=f"{initial_text}\nProgress: {i*10}%")
             except Exception as e:
+                if "MESSAGE_ID_INVALID" in str(e):
+                    print(f"Message ID invalid: {e}", file=sys.stderr)
+                    break
                 print(f"Error updating progress: {e}", file=sys.stderr)
-                break
+                continue
     except Exception as e:
         print(f"Error in send_progress loop: {e}", file=sys.stderr)
 

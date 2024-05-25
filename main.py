@@ -10,9 +10,9 @@ API_HASH = os.environ.get("API_HASH")
 
 Bot = Client(
     "WebDL-Bot",
-    bot_token = BOT_TOKEN,
-    api_id = API_ID,
-    api_hash = API_HASH
+    bot_token=BOT_TOKEN,
+    api_id=API_ID,
+    api_hash=API_HASH
 )
 
 START_TXT = """
@@ -25,11 +25,10 @@ for ex: 'https://www.google.com'
 """
 
 START_BTN = InlineKeyboardMarkup(
-        [[
-        InlineKeyboardButton('My Father', url='https://t.me/Matiz_Owner'),
-        ]]
-    )
-
+    [[
+        InlineKeyboardButton('Source Code', url='https://github.com/samadii/WebDownloaderBot'),
+    ]]
+)
 
 @Bot.on_message(filters.command(["start"]))
 async def start(bot, update):
@@ -41,33 +40,27 @@ async def start(bot, update):
         reply_markup=reply_markup
     )
 
-
-
-
 @Bot.on_message(filters.private & filters.text & ~filters.regex('/start'))
 async def webdl(_, m):
-
     if not m.text.startswith('http'):
-        return await m.reply("the URL must start with 'http' or 'https'")
+        return await m.reply("The URL must start with 'http' or 'https'")
 
-    msg = await m.reply('Processing..')
+    msg = await m.reply('Processing...')
     url = m.text
     name = dir = str(m.chat.id)
     if not os.path.isdir(dir):
         os.makedirs(dir)
 
-    obj = urlDownloader(imgFlg=True, linkFlg=True, scriptFlg=True)
-    res = obj.savePage(url, dir)
+    obj = urlDownloader(imgFlg=True, linkFlg=True, scriptFlg=True, file_size_limit=10*1024*1024)
+    res, summary = obj.savePage(url, dir)
     if not res:
-        return await msg.edit_text('something went wrong!')
+        return await msg.edit_text('Something went wrong!')
 
     shutil.make_archive(name, 'zip', base_dir=dir)
-    await m.reply_document(name+'.zip')
+    await m.reply_document(name+'.zip', caption=summary)
     await msg.delete()
 
     shutil.rmtree(dir)
     os.remove(name+'.zip')
-
-
 
 Bot.run()

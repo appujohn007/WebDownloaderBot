@@ -35,17 +35,23 @@ class urlDownloader:
             self.soup = BeautifulSoup(response.text, 'lxml')
             os.makedirs(pagefolder, exist_ok=True)
             
+            print(f"Starting to download components from {url}")
+
             if self.imgFlg:
+                print("Downloading images...")
                 self._soupfindnSave(url, pagefolder, 'img', 'src', 'images')
             if self.linkFlg:
+                print("Downloading links...")
                 self._soupfindnSave(url, pagefolder, 'link', 'href', 'links')
             if self.scriptFlg:
+                print("Downloading scripts...")
                 self._soupfindnSave(url, pagefolder, 'script', 'src', 'scripts')
                 
             with open(os.path.join(pagefolder, 'page.html'), 'wb') as file:
                 file.write(self.soup.prettify('utf-8'))
             
             summary = f"Downloaded: {self.summary['images']} images, {self.summary['links']} links, {self.summary['scripts']} scripts."
+            print(summary)
             return True, summary
         except Exception as e:
             print(f"> savePage(): Create files failed: {str(e)}.", file=sys.stderr)

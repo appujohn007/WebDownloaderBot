@@ -4,7 +4,7 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from web_dl import urlDownloader
-from auth import add_credentials, get_credentials, remove_credentials
+from auth import add_credentials, get_credentials
 import asyncio
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -26,7 +26,7 @@ I can download all the components (.html, .css, img, xml, video, javascript..) f
 Send any URL, optionally with the components you want to download. For example:
 'https://www.google.com img,css,script'
 
-Use /auth to add your authentication credentials.
+Use /auth username:password to add your authentication credentials.
 """
 
 START_BTN = InlineKeyboardMarkup(
@@ -47,7 +47,12 @@ async def start(bot, update):
 
 @Bot.on_message(filters.command(["auth"]))
 async def auth(bot, update):
-    await update.reply_text("Please send your username and password in the format 'username:password'")
+    if len(update.command) != 2 or ':' not in update.command[1]:
+        return await update.reply_text("Please send your username and password in the format 'username:password'")
+    
+    username, password = update.command[1].split(":", 1)
+    add_credentials(update.from_user.id, username, password)
+    await update.reply_text("Credentials saved successfully.")
 
 @Bot.on_message(filters.private & filters.text & ~filters.regex('/start|/auth'))
 async def webdl(_, m):
@@ -59,12 +64,6 @@ async def webdl(_, m):
 
     if not is_valid_url(url):
         return await m.reply("The URL is invalid or inaccessible")
-
-    # Check if the user is sending authentication details
-    if ":" in m.text and m.text.count(":") == 1:
-        username, password = m.text.split(":")
-        add_credentials(m.chat.id, username, password)
-        return await m.reply("Credentials saved successfully.")
 
     # Check if user has credentials saved
     credentials = get_credentials(m.chat.id)

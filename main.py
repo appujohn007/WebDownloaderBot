@@ -90,4 +90,23 @@ async def webdl(_, m):
     shutil.rmtree(dir)
     os.remove(name+'.zip')
 
+def is_valid_url(url):
+    try:
+        response = requests.head(url, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+def parse_components(text):
+    components = text.split()[1:]
+    imgFlg = 'img' in components
+    linkFlg = 'css' in components
+    scriptFlg = 'script' in components
+    return imgFlg, linkFlg, scriptFlg
+
+async def send_progress(msg, chat_id, initial_text):
+    for i in range(10):
+        await asyncio.sleep(1)
+        await Bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=f"{initial_text}\nProgress: {i*10}%")
+
 Bot.run()

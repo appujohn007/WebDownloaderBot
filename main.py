@@ -5,7 +5,7 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from web_dl import urlDownloader
-from auth import add_credentials, get_credentials
+from auth import add_credentials, get_credentials, remove_credentials, get_all_credentials
 import asyncio
 
 # Bot configuration using environment variables
@@ -29,6 +29,8 @@ Send any URL, optionally with the components you want to download. For example:
 'https://www.google.com img,css,script'
 
 Use /auth username:password to add your authentication credentials.
+Use /remove_auth to remove your authentication credentials.
+Use /view_auth to view your stored authentication credentials.
 """
 
 START_BTN = InlineKeyboardMarkup(
@@ -56,7 +58,23 @@ async def auth(bot, update):
     add_credentials(update.from_user.id, username, password)
     await update.reply_text("Credentials saved successfully.")
 
-@Bot.on_message(filters.private & filters.text & ~filters.regex('/start|/auth'))
+@Bot.on_message(filters.command(["remove_auth"]))
+async def remove_auth(bot, update):
+    success = remove_credentials(update.from_user.id)
+    if success:
+        await update.reply_text("Credentials removed successfully.")
+    else:
+        await update.reply_text("No credentials found to remove.")
+
+@Bot.on_message(filters.command(["view_auth"]))
+async def view_auth(bot, update):
+    creds = get_credentials(update.from_user.id)
+    if creds:
+        await update.reply_text(f"Your credentials:\nUsername: {creds['username']}\nPassword: {creds['password']}")
+    else:
+        await update.reply_text("No credentials found.")
+
+@Bot.on_message(filters.private & filters.text & ~filters.regex('/start|/auth|/remove_auth|/view_auth'))
 async def webdl(_, m):
     url = m.text.strip()
 
@@ -77,7 +95,7 @@ async def webdl(_, m):
             [
                 InlineKeyboardButton("XML", callback_data=f"x|{url}"),
                 InlineKeyboardButton("Video", callback_data=f"v|{url}"),
-                InlineKeyboardButton("JavaScript", callback_data=f"j|{url}")
+                InlineKeyboardButton("JS", callback_data=f"j|{url}")
             ]
         ]
     )

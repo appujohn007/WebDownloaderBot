@@ -1,5 +1,5 @@
 import os
-import sys  # Add this import statement
+import sys
 import shutil
 import requests
 from pyrogram import Client, filters

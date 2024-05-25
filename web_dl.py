@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class urlDownloader(object):
     """Download the webpage components based on the input URL."""
-    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=False, xmlFlg=False, file_size_limit=None, max_retries=3, auth=None):
+    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=True, xmlFlg=True, file_size_limit=None, max_retries=3, auth=None):
         self.soup = None
         self.imgFlg = imgFlg
         self.linkFlg = linkFlg
@@ -20,6 +20,7 @@ class urlDownloader(object):
         self.max_retries = max_retries
         self.auth = auth
         self.linkType = ('css', 'png', 'ico', 'jpg', 'jpeg', 'mov', 'ogg', 'gif', 'xml', 'js')
+        self.videoType = ('mp4', 'webm', 'ogg')
         self.session = requests.Session()
         self.summary = {
             'images': 0,
@@ -49,8 +50,8 @@ class urlDownloader(object):
                 self._soupfindnSave(url, pagefolder, tag2find='xml', inner='src', category='xmls')
             with open(os.path.join(pagefolder, 'page.html'), 'wb') as file:
                 file.write(self.soup.prettify('utf-8'))
-            summary = f"Downloaded: {self.summary['images']} images, {self.summary['links']} links, {self.summary['scripts']} scripts, {self.summary['videos']} videos, {self.summary['xmls']} xmls."
-            return True, summary
+            summary = (f"Downloaded: {self.summary['images']} images, {self.summary['links']} links, "
+                       f"{self.summary['scripts']} scripts, {self.summary['videos']} videos, {self.summary['xmls']} xmls.")
         except Exception as e:
             print(f"> savePage(): Create files failed: {str(e)}.", file=sys.stderr)
             return False, None

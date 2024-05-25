@@ -54,51 +54,49 @@ class urlDownloader(object):
                        f"{self.summary['scripts']} scripts, {self.summary['videos']} videos, {self.summary['xmls']} xmls.")
             return True, summary
         except Exception as e:
-            print(f"> savePage(): Create files failed: {str(e)}.", file=sys.stderr)
-            return False, None
-
-    def _download_file(self, fileurl, filepath):
-        """Download a file with retry mechanism."""
-        for attempt in range(self.max_retries):
-            try:
-                filebin = self.session.get(fileurl, stream=True, auth=self.auth)
-                filebin.raise_for_status()
-                if self.file_size_limit and int(filebin.headers.get('content-length', 0)) > self.file_size_limit:
-                    print(f"File {fileurl} exceeds the size limit.", file=sys.stderr)
-                    return False
-                with open(filepath, 'wb') as file:
-                    for chunk in filebin.iter_content(chunk_size=8192):
-                        if chunk:
-                            file.write(chunk)
-                print(f"Successfully downloaded {fileurl} to {filepath}")  # Debug statement
-                return True
-            except requests.RequestException as exc:
-                print(f"Attempt {attempt + 1} failed for {fileurl}: {exc}", file=sys.stderr)
-        return False
+            print(f"> savePage(): Create page error: {str(e)}")
+            return False, str(e)
 
     def _soupfindnSave(self, url, pagefolder, tag2find='img', inner='src', category='images'):
-        """Saves on specified pagefolder all tag2find objects."""
-        pagefolder = os.path.join(pagefolder, tag2find)
-        if not os.path.exists(pagefolder):
-            os.mkdir(pagefolder)
-        elements = self.soup.findAll(tag2find)
-        if not elements:
-            print(f"No {tag2find} elements found.", file=sys.stderr)
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        """Find and save the components from the soup object."""
+        folder = os.path.join(pagefolder, category)
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+        with ThreadPoolExecutor(max_workers=10) as executor:
             futures = []
-            for res in tqdm(elements, desc=f"Downloading {tag2find}"):
-                if not res.has_attr(inner):
-                    continue
-                filename = re.sub(r'\W+', '.', os.path.basename(res[inner]))
-                if tag2find == 'link' and (not any(ext in filename for ext in self.linkType)):
-                    filename += '.html'
-                fileurl = urljoin(url, res.get(inner))
-                filepath = os.path.join(pagefolder, filename)
-                res[inner] = os.path.join(os.path.basename(pagefolder), filename)
-                if not os.path.isfile(filepath):
-                    print(f"Downloading {fileurl} to {filepath}")  # Debug statement
-                    futures.append(executor.submit(self._download_file, fileurl, filepath))
-            for future in futures:
-                if future.result():
-                    self.summary[category] += 1
-        print(f"Completed downloading {tag2find} elements. Total: {self.summary[category]}")  # Debug statement
+            for tag in self.soup.find_all(tag2find):
+                try:
+                    turl = tag.get(inner)
+                    if turl is None:
+                        continue
+                    turl = turl.split('?')[0]
+                    filename = os.path.basename(turl).strip().replace(" ", "_")
+                    if len(filename) > 25:
+                        filename = filename[-25:]
+                    savepath = os.path.join(folder, filename)
+                    if not turl.startswith("http"):
+                        turl = urljoin(url, turl)
+                    futures.append(executor.submit(self._download_file, turl, savepath, category))
+                except Exception as e:
+                    print(f"> _soupfindnSave(): Inner exception: {str(e)}")
+            for future in tqdm(futures, desc=f"Downloading {category}"):
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"> _soupfindnSave(): Future exception: {str(e)}")
+
+    def _download_file(self, url, savepath, category):
+        """Download a file from a URL to a local path."""
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = self.session.get(url, headers=headers, stream=True, auth=self.auth)
+            response.raise_for_status()
+            if self.file_size_limit and int(response.headers.get('content-length', 0)) > self.file_size_limit:
+                print(f"Skipping {url} due to size limit.")
+                return
+            with open(savepath, 'wb') as file:
+                for chunk in response.iter_content(1024):
+                    file.write(chunk)
+            self.summary[category] += 1
+        except Exception as e:
+            print(f"> _download_file(): Download error for {url}: {str(e)}")

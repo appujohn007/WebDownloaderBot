@@ -4,3 +4,4 @@ requests
 lxml
 urllib3
 bs4
+tqdm

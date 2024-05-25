@@ -59,6 +59,8 @@ async def auth(bot, update):
 async def webdl(_, m):
     parts = m.text.split()
     url = parts[0]
+    components = parts[1:]  # Extract components from the message
+    download_directly = False
 
     if not url.startswith('http'):
         return await m.reply("The URL must start with 'http' or 'https'")
@@ -66,15 +68,29 @@ async def webdl(_, m):
     if not is_valid_url(url):
         return await m.reply("The URL is invalid or inaccessible")
 
-    # Check if user has credentials saved
-    credentials = get_credentials(m.chat.id)
-    auth = (credentials['username'], credentials['password']) if credentials else None
+    # Check if components are specified in the message
+    if components:
+        imgFlg, linkFlg, scriptFlg = parse_components(' '.join(components))
+        print(f"Flags - img: {imgFlg}, link: {linkFlg}, script: {scriptFlg}")  # Debug statement
+    else:
+        # No components specified, prompt user with options
+        keyboard = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("HTML", callback_data="html"),
+                    InlineKeyboardButton("CSS", callback_data="css"),
+                    InlineKeyboardButton("Images", callback_data="images")
+                ],
+                [
+                    InlineKeyboardButton("XML", callback_data="xml"),
+                    InlineKeyboardButton("Video", callback_data="video"),
+                    InlineKeyboardButton("JavaScript", callback_data="js")
+                ]
+            ]
+        )
+        await m.reply("Please select which components to download:", reply_markup=keyboard)
+        return
 
-    msg = await m.reply('Processing...')
-    progress_task = asyncio.create_task(send_progress(msg, m.chat.id, "Processing..."))
-
-    imgFlg, linkFlg, scriptFlg = parse_components(m.text)
-    print(f"Flags - img: {imgFlg}, link: {linkFlg}, script: {scriptFlg}")  # Debug statement
     name = dir = str(m.chat.id)
     if not os.path.isdir(dir):
         os.makedirs(dir)
@@ -82,24 +98,21 @@ async def webdl(_, m):
     obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, file_size_limit=10*1024*1024, auth=auth)
     res, summary = obj.savePage(url, dir)
     if not res:
-        await msg.edit_text('Something went wrong!')
-        progress_task.cancel()
-        return
+        return await m.reply('Something went wrong!')
 
     shutil.make_archive(name, 'zip', base_dir=dir)
     await m.reply_document(name+'.zip', caption=summary)
-    await msg.delete()
 
     shutil.rmtree(dir)
     os.remove(name+'.zip')
-    progress_task.cancel()
+
+    print("Download completed successfully!")  # Debug statement
 
 def parse_components(text):
-    components = text.split()[1:]  # Skip the URL part
+    components = text.split()
     imgFlg = 'img' in components
     linkFlg = 'css' in components
     scriptFlg = 'script' in components
-    print(f"Parsed components: imgFlg={imgFlg}, linkFlg={linkFlg}, scriptFlg={scriptFlg}")  # Debug statement
     return imgFlg, linkFlg, scriptFlg
 
 def is_valid_url(url):

@@ -1,5 +1,5 @@
 import os
-import sys
+import sys  # Ensure sys is imported
 import shutil
 import requests
 from pyrogram import Client, filters

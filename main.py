@@ -5,7 +5,6 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from web_dl import urlDownloader
 from auth import add_credentials, get_credentials, remove_credentials
-import asyncio
 
 # Bot configuration using environment variables
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -27,8 +26,8 @@ I can download all the components (.html, .css, img, xml, video, javascript..) f
 Send any URL, optionally with the components you want to download. For example:
 'https://www.google.com img,css,script'
 
-Use /auth website_url username:password to add your authentication credentials.
-Use /remove_auth website_url to remove your authentication credentials.
+Use /auth username:password to add your authentication credentials.
+Use /remove_auth to remove your authentication credentials.
 Use /view_auth to view your stored authentication credentials.
 """
 
@@ -38,7 +37,7 @@ START_BTN = InlineKeyboardMarkup(
     ]]
 )
 
-@Bot.on_message(filters.command("start"))
+@Bot.on_message(filters.command(["start"]))
 async def start(bot, update):
     text = START_TXT.format(update.from_user.mention)
     reply_markup = START_BTN
@@ -48,38 +47,32 @@ async def start(bot, update):
         reply_markup=reply_markup
     )
 
-@Bot.on_message(filters.command("auth"))
+@Bot.on_message(filters.command(["auth"]))
 async def auth(bot, update):
-    if len(update.command) != 3 or ':' not in update.command[2]:
-        return await update.reply_text("Please send your website URL and credentials in the format 'website_url username:password'")
+    if len(update.command) != 2 or ':' not in update.command[1]:
+        return await update.reply_text("Please send your username and password in the format 'username:password'")
     
-    website, credentials = update.command[1], update.command[2]
-    username, password = credentials.split(":", 1)
-    add_credentials(update.from_user.id, website, username, password)
+    username, password = update.command[1].split(":", 1)
+    add_credentials(update.from_user.id, username, password)
     await update.reply_text("Credentials saved successfully.")
 
-@Bot.on_message(filters.command("remove_auth"))
+@Bot.on_message(filters.command(["remove_auth"]))
 async def remove_auth(bot, update):
-    if len(update.command) != 2:
-        return await update.reply_text("Please send the website URL in the format 'website_url'")
-    
-    website = update.command[1]
-    success = remove_credentials(update.from_user.id, website)
+    success = remove_credentials(update.from_user.id)
     if success:
         await update.reply_text("Credentials removed successfully.")
     else:
         await update.reply_text("No credentials found to remove.")
 
-@Bot.on_message(filters.command("view_auth"))
+@Bot.on_message(filters.command(["view_auth"]))
 async def view_auth(bot, update):
     creds = get_credentials(update.from_user.id)
     if creds:
-        cred_list = [f"Website: {website}\nUsername: {details['username']}\nPassword: {details['password']}" for website, details in creds.items()]
-        await update.reply_text("\n\n".join(cred_list))
+        await update.reply_text(f"Your credentials:\nUsername: {creds['username']}\nPassword: {creds['password']}")
     else:
         await update.reply_text("No credentials found.")
 
-@Bot.on_message(filters.private & filters.text & ~filters.command(["start", "auth", "remove_auth", "view_auth"]))
+@Bot.on_message(filters.private & filters.text & ~filters.regex('/start|/auth|/remove_auth|/view_auth'))
 async def webdl(_, m):
     url = m.text.strip()
 
@@ -93,14 +86,14 @@ async def webdl(_, m):
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("HTML", callback_data=f"h|{url}"),
-                InlineKeyboardButton("CSS", callback_data=f"c|{url}"),
-                InlineKeyboardButton("Images", callback_data=f"i|{url}")
+                InlineKeyboardButton("HTML", callback_data=f"h|{url[:50]}"),
+                InlineKeyboardButton("CSS", callback_data=f"c|{url[:50]}"),
+                InlineKeyboardButton("Images", callback_data=f"i|{url[:50]}")
             ],
             [
-                InlineKeyboardButton("XML", callback_data=f"x|{url}"),
-                InlineKeyboardButton("Video", callback_data=f"v|{url}"),
-                InlineKeyboardButton("JS", callback_data=f"j|{url}")
+                InlineKeyboardButton("XML", callback_data=f"x|{url[:50]}"),
+                InlineKeyboardButton("Video", callback_data=f"v|{url[:50]}"),
+                InlineKeyboardButton("JS", callback_data=f"j|{url[:50]}")
             ]
         ]
     )
@@ -116,24 +109,34 @@ async def callback_query_handler(bot, update: CallbackQuery):
     scriptFlg = component == 'j'
     videoFlg = component == 'v'
     xmlFlg = component == 'x'
-    htmlFlg = component == 'h'
 
     name = dir = str(update.message.chat.id)
     if not os.path.isdir(dir):
         os.makedirs(dir)
 
     auth = get_credentials(update.from_user.id)
-    obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, htmlFlg=htmlFlg, file_size_limit=10*1024*1024, auth=auth)
+    obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, file_size_limit=10*1024*1024, auth=auth)
     res, summary = obj.savePage(url, dir)
     if not res:
         return await update.message.reply('Something went wrong!')
 
     zip_filename = f"{name}.zip"
     shutil.make_archive(name, 'zip', base_dir=dir)
-    await update.message.reply_document(zip_filename, caption=summary)
 
-    shutil.rmtree(dir)
-    os.remove(zip_filename)
+    try:
+        await update.message.reply_document(zip_filename, caption=summary)
+    except Exception as e:
+        print(f"Failed to send document: {e}")
+
+    try:
+        shutil.rmtree(dir)
+    except Exception as e:
+        print(f"Failed to remove directory {dir}: {e}")
+
+    try:
+        os.remove(zip_filename)
+    except Exception as e:
+        print(f"Failed to remove zip file {zip_filename}: {e}")
 
     print("Download completed successfully!")  # Debug statement
 
@@ -154,5 +157,5 @@ def is_valid_url(url):
     except requests.RequestException as e:
         print(f"Request exception: {e}")
     return False
- 
+
 Bot.run()

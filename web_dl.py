@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -8,26 +9,28 @@ from concurrent.futures import ThreadPoolExecutor
 
 class urlDownloader(object):
     """Download the webpage components based on the input URL."""
-    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=True, xmlFlg=True, file_size_limit=None, max_retries=3, auth=None):
+    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=True, xmlFlg=True, htmlFlg=True, file_size_limit=None, max_retries=3, auth=None):
         self.soup = None
         self.imgFlg = imgFlg
         self.linkFlg = linkFlg
         self.scriptFlg = scriptFlg
         self.videoFlg = videoFlg
         self.xmlFlg = xmlFlg
+        self.htmlFlg = htmlFlg
         self.file_size_limit = file_size_limit
         self.max_retries = max_retries
         self.auth = auth
         self.linkType = ('css', 'png', 'ico', 'jpg', 'jpeg', 'mov', 'ogg', 'gif', 'xml', 'js')
         self.videoType = ('mp4', 'webm', 'ogg')
-        self.session = requests.Session()
         self.summary = {
             'images': 0,
             'links': 0,
             'scripts': 0,
             'videos': 0,
-            'xmls': 0
+            'xmls': 0,
+            'htmls': 0
         }
+        self.session = requests.Session()
 
     def savePage(self, url, pagefolder='page'):
         """Save the web page components based on the input URL and dir name."""
@@ -47,6 +50,8 @@ class urlDownloader(object):
                 self._soupfindnSave(url, pagefolder, tag2find='video', inner='src', category='videos')
             if self.xmlFlg:
                 self._soupfindnSave(url, pagefolder, tag2find='xml', inner='src', category='xmls')
+            if self.htmlFlg:
+                self._soupfindnSave(url, pagefolder, tag2find='html', inner='src', category='htmls')
             with open(os.path.join(pagefolder, 'index.html'), 'w', encoding='utf-8') as f:
                 f.write(self.soup.prettify())
             summary_text = "\n".join([f"{k}: {v}" for k, v in self.summary.items()])

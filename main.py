@@ -70,14 +70,14 @@ async def webdl(_, m):
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("HTML", callback_data=f"html|{url}"),
-                InlineKeyboardButton("CSS", callback_data=f"css|{url}"),
-                InlineKeyboardButton("Images", callback_data=f"img|{url}")
+                InlineKeyboardButton("HTML", callback_data=f"h|{url}"),
+                InlineKeyboardButton("CSS", callback_data=f"c|{url}"),
+                InlineKeyboardButton("Images", callback_data=f"i|{url}")
             ],
             [
-                InlineKeyboardButton("XML", callback_data=f"xml|{url}"),
-                InlineKeyboardButton("Video", callback_data=f"video|{url}"),
-                InlineKeyboardButton("JavaScript", callback_data=f"script|{url}")
+                InlineKeyboardButton("XML", callback_data=f"x|{url}"),
+                InlineKeyboardButton("Video", callback_data=f"v|{url}"),
+                InlineKeyboardButton("JavaScript", callback_data=f"j|{url}")
             ]
         ]
     )
@@ -88,11 +88,11 @@ async def callback_query_handler(bot, update: CallbackQuery):
     data = update.data
     component, url = data.split('|', 1)
 
-    imgFlg = component == 'img'
-    linkFlg = component == 'css'
-    scriptFlg = component == 'script'
-    videoFlg = component == 'video'
-    xmlFlg = component == 'xml'
+    imgFlg = component == 'i'
+    linkFlg = component == 'c'
+    scriptFlg = component == 'j'
+    videoFlg = component == 'v'
+    xmlFlg = component == 'x'
 
     name = dir = str(update.message.chat.id)
     if not os.path.isdir(dir):

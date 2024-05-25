@@ -2,20 +2,21 @@ import os
 import re
 import sys
 import requests
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
 class urlDownloader(object):
     """Download the webpage components based on the input URL."""
-    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, file_size_limit=None, max_retries=3):
+    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, file_size_limit=None, max_retries=3, auth=None):
         self.soup = None
         self.imgFlg = imgFlg
         self.linkFlg = linkFlg
         self.scriptFlg = scriptFlg
         self.file_size_limit = file_size_limit
         self.max_retries = max_retries
+        self.auth = auth
         self.linkType = ('css', 'png', 'ico', 'jpg', 'jpeg', 'mov', 'ogg', 'gif', 'xml', 'js')
         self.session = requests.Session()
         self.summary = {
@@ -27,7 +28,7 @@ class urlDownloader(object):
     def savePage(self, url, pagefolder='page'):
         """Save the web page components based on the input URL and dir name."""
         try:
-            response = self.session.get(url)
+            response = self.session.get(url, auth=self.auth)
             self.soup = BeautifulSoup(response.text, features="lxml")
             if not os.path.exists(pagefolder):
                 os.mkdir(pagefolder)
@@ -49,7 +50,7 @@ class urlDownloader(object):
         """Download a file with retry mechanism."""
         for attempt in range(self.max_retries):
             try:
-                filebin = self.session.get(fileurl, stream=True)
+                filebin = self.session.get(fileurl, stream=True, auth=self.auth)
                 filebin.raise_for_status()
                 if self.file_size_limit and int(filebin.headers.get('content-length', 0)) > self.file_size_limit:
                     print(f"File {fileurl} exceeds the size limit.", file=sys.stderr)

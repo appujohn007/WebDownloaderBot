@@ -5,7 +5,7 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from web_dl import urlDownloader
-from auth import add_credentials, get_credentials, remove_credentials, get_all_credentials
+from auth import add_credentials, get_credentials, remove_credentials
 import asyncio
 
 # Bot configuration using environment variables

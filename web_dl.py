@@ -1,19 +1,20 @@
 import os
+import re
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
-class urlDownloader:
-    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=True, xmlFlg=True, htmlFlg=False, file_size_limit=None, max_retries=3, auth=None):
+class urlDownloader(object):
+    """Download the webpage components based on the input URL."""
+    def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=True, xmlFlg=True, file_size_limit=None, max_retries=3, auth=None):
         self.soup = None
         self.imgFlg = imgFlg
         self.linkFlg = linkFlg
         self.scriptFlg = scriptFlg
         self.videoFlg = videoFlg
         self.xmlFlg = xmlFlg
-        self.htmlFlg = htmlFlg
         self.file_size_limit = file_size_limit
         self.max_retries = max_retries
         self.auth = auth
@@ -25,11 +26,11 @@ class urlDownloader:
             'links': 0,
             'scripts': 0,
             'videos': 0,
-            'xmls': 0,
-            'htmls': 0
+            'xmls': 0
         }
 
     def savePage(self, url, pagefolder='page'):
+        """Save the web page components based on the input URL and dir name."""
         try:
             response = self.session.get(url, auth=self.auth)
             response.raise_for_status()
@@ -46,58 +47,48 @@ class urlDownloader:
                 self._soupfindnSave(url, pagefolder, tag2find='video', inner='src', category='videos')
             if self.xmlFlg:
                 self._soupfindnSave(url, pagefolder, tag2find='xml', inner='src', category='xmls')
-            if self.htmlFlg:
-                with open(os.path.join(pagefolder, 'page.html'), 'wb') as file:
-                    file.write(self.soup.prettify('utf-8'))
-                self.summary['htmls'] += 1
-            summary = self.generate_summary()
-            return True, summary
+            with open(os.path.join(pagefolder, 'index.html'), 'w', encoding='utf-8') as f:
+                f.write(self.soup.prettify())
+            summary_text = "\n".join([f"{k}: {v}" for k, v in self.summary.items()])
+            return True, summary_text
         except Exception as e:
-            print(f"> savePage(): Create page error: {str(e)}")
-            return False, str(e)
+            print(f"Error saving page: {e}")
+            return False, ""
 
     def _soupfindnSave(self, url, pagefolder, tag2find='img', inner='src', category='images'):
+        """Find and save specific elements in the soup."""
+        tags = self.soup.find_all(tag2find)
+        print(f"Found {len(tags)} {category} tags")  # Debug statement
+        urls = [tag.get(inner) for tag in tags]
+        urls = [urljoin(url, u) for u in urls]
+        urls = list(set(urls))
+        self.summary[category] += len(urls)
         folder = os.path.join(pagefolder, category)
         if not os.path.exists(folder):
             os.mkdir(folder)
         with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = []
-            for tag in self.soup.find_all(tag2find):
-                try:
-                    turl = tag.get(inner)
-                    if turl is None:
-                        continue
-                    turl = turl.split('?')[0]
-                    filename = os.path.basename(turl).strip().replace(" ", "_")
-                    if len(filename) > 25:
-                        filename = filename[-25:]
-                    savepath = os.path.join(folder, filename)
-                    if not turl.startswith("http"):
-                        turl = urljoin(url, turl)
-                    futures.append(executor.submit(self._download_file, turl, savepath, category))
-                except Exception as e:
-                    print(f"> _soupfindnSave(): Inner exception: {str(e)}")
-            for future in tqdm(futures, desc=f"Downloading {category}"):
-                try:
-                    future.result()
-                except Exception as e:
-                    print(f"> _soupfindnSave(): Future exception: {str(e)}")
+            for u in urls:
+                executor.submit(self._savefile, folder, u)
 
-    def _download_file(self, url, savepath, category):
+    def _savefile(self, folder, fileurl):
+        """Save the file content from the URL to the given folder."""
+        if not fileurl:
+            return
+        name = re.sub(r'\W+', '', os.path.basename(fileurl))
+        filename = os.path.join(folder, name)
+        print(f"Downloading {fileurl} to {filename}")  # Debug statement
         try:
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = self.session.get(url, headers=headers, stream=True, auth=self.auth)
+            response = self.session.get(fileurl, stream=True, auth=self.auth)
             response.raise_for_status()
-            if self.file_size_limit and int(response.headers.get('content-length', 0)) > self.file_size_limit:
-                print(f"Skipping {url} due to size limit.")
+            content_length = response.headers.get('Content-Length')
+            if content_length and self.file_size_limit and int(content_length) > self.file_size_limit:
+                print(f"Skipping {fileurl}, file size {content_length} exceeds limit {self.file_size_limit}")
                 return
-            with open(savepath, 'wb') as file:
-                for chunk in response.iter_content(1024):
-                    file.write(chunk)
-            self.summary[category] += 1
+            with open(filename, 'wb') as f:
+                for chunk in tqdm(response.iter_content(chunk_size=1024)):
+                    if chunk:
+                        f.write(chunk)
         except Exception as e:
-            print(f"> _download_file(): Download error for {url}: {str(e)}")
-
-    def generate_summary(self):
-        components = [f"{count} {name}" for name, count in self.summary.items() if count > 0]
-        return f"Downloaded: {', '.join(components)}."
+            print(f"Error downloading {fileurl}: {e}")
+            if os.path.exists(filename):
+                os.remove(filename)

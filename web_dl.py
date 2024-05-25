@@ -1,6 +1,6 @@
 import os
 import re
-import sys  # Make sure to import sys here as well if needed
+import sys
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup

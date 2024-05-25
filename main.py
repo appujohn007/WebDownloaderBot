@@ -139,9 +139,20 @@ async def callback_query_handler(bot, update: CallbackQuery):
 
 def is_valid_url(url):
     try:
-        response = requests.head(url, timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
-
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.head(url, headers=headers, timeout=10, allow_redirects=True)
+        if response.status_code == 200:
+            return True
+        print(f"HEAD request failed with status code: {response.status_code}")
+        print(f"Response headers: {response.headers}")
+        # Fallback to GET request if HEAD fails
+        response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+        if response.status_code == 200:
+            return True
+        print(f"GET request failed with status code: {response.status_code}")
+        print(f"Response headers: {response.headers}")
+    except requests.RequestException as e:
+        print(f"Request exception: {e}")
+    return False
+ 
 Bot.run()

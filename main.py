@@ -74,6 +74,7 @@ async def webdl(_, m):
     progress_task = asyncio.create_task(send_progress(msg, m.chat.id, "Processing..."))
 
     imgFlg, linkFlg, scriptFlg = parse_components(m.text)
+    print(f"Flags - img: {imgFlg}, link: {linkFlg}, script: {scriptFlg}")  # Debug statement
     name = dir = str(m.chat.id)
     if not os.path.isdir(dir):
         os.makedirs(dir)

@@ -110,13 +110,14 @@ async def callback_query_handler(bot, update: CallbackQuery):
     scriptFlg = component == 'j'
     videoFlg = component == 'v'
     xmlFlg = component == 'x'
+    htmlFlg = component == 'h'
 
     name = dir = str(update.message.chat.id)
     if not os.path.isdir(dir):
         os.makedirs(dir)
 
     auth = get_credentials(update.from_user.id)
-    obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, file_size_limit=10*1024*1024, auth=auth)
+    obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, htmlFlg=htmlFlg, file_size_limit=10*1024*1024, auth=auth)
     res, summary = obj.savePage(url, dir)
     if not res:
         return await update.message.reply('Something went wrong!')

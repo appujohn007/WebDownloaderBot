@@ -52,6 +52,7 @@ class urlDownloader(object):
                 file.write(self.soup.prettify('utf-8'))
             summary = (f"Downloaded: {self.summary['images']} images, {self.summary['links']} links, "
                        f"{self.summary['scripts']} scripts, {self.summary['videos']} videos, {self.summary['xmls']} xmls.")
+            return True, summary
         except Exception as e:
             print(f"> savePage(): Create files failed: {str(e)}.", file=sys.stderr)
             return False, None

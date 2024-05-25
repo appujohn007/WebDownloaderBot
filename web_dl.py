@@ -1,14 +1,12 @@
 import os
 import re
-import sys
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 
-class urlDownloader(object):
-    """Download the webpage components based on the input URL."""
+class urlDownloader:
     def __init__(self, imgFlg=True, linkFlg=True, scriptFlg=True, videoFlg=True, xmlFlg=True, file_size_limit=None, max_retries=3, auth=None):
         self.soup = None
         self.imgFlg = imgFlg
@@ -31,7 +29,6 @@ class urlDownloader(object):
         }
 
     def savePage(self, url, pagefolder='page'):
-        """Save the web page components based on the input URL and dir name."""
         try:
             response = self.session.get(url, auth=self.auth)
             response.raise_for_status()
@@ -58,7 +55,6 @@ class urlDownloader(object):
             return False, str(e)
 
     def _soupfindnSave(self, url, pagefolder, tag2find='img', inner='src', category='images'):
-        """Find and save the components from the soup object."""
         folder = os.path.join(pagefolder, category)
         if not os.path.exists(folder):
             os.mkdir(folder)
@@ -86,7 +82,6 @@ class urlDownloader(object):
                     print(f"> _soupfindnSave(): Future exception: {str(e)}")
 
     def _download_file(self, url, savepath, category):
-        """Download a file from a URL to a local path."""
         try:
             headers = {"User-Agent": "Mozilla/5.0"}
             response = self.session.get(url, headers=headers, stream=True, auth=self.auth)

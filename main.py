@@ -95,10 +95,11 @@ async def webdl(_, m):
     progress_task.cancel()
 
 def parse_components(text):
-    components = text.split()[1:]
+    components = text.split()[1:]  # Skip the URL part
     imgFlg = 'img' in components
     linkFlg = 'css' in components
     scriptFlg = 'script' in components
+    print(f"Parsed components: imgFlg={imgFlg}, linkFlg={linkFlg}, scriptFlg={scriptFlg}")  # Debug statement
     return imgFlg, linkFlg, scriptFlg
 
 def is_valid_url(url):

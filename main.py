@@ -27,8 +27,8 @@ I can download all the components (.html, .css, img, xml, video, javascript..) f
 Send any URL, optionally with the components you want to download. For example:
 'https://www.google.com img,css,script'
 
-Use /auth username:password to add your authentication credentials.
-Use /remove_auth to remove your authentication credentials.
+Use /auth website_url username:password to add your authentication credentials.
+Use /remove_auth website_url to remove your authentication credentials.
 Use /view_auth to view your stored authentication credentials.
 """
 
@@ -50,16 +50,21 @@ async def start(bot, update):
 
 @Bot.on_message(filters.command("auth"))
 async def auth(bot, update):
-    if len(update.command) != 2 or ':' not in update.command[1]:
-        return await update.reply_text("Please send your username and password in the format 'username:password'")
+    if len(update.command) != 3 or ':' not in update.command[2]:
+        return await update.reply_text("Please send your website URL and credentials in the format 'website_url username:password'")
     
-    username, password = update.command[1].split(":", 1)
-    add_credentials(update.from_user.id, username, password)
+    website, credentials = update.command[1], update.command[2]
+    username, password = credentials.split(":", 1)
+    add_credentials(update.from_user.id, website, username, password)
     await update.reply_text("Credentials saved successfully.")
 
 @Bot.on_message(filters.command("remove_auth"))
 async def remove_auth(bot, update):
-    success = remove_credentials(update.from_user.id)
+    if len(update.command) != 2:
+        return await update.reply_text("Please send the website URL in the format 'website_url'")
+    
+    website = update.command[1]
+    success = remove_credentials(update.from_user.id, website)
     if success:
         await update.reply_text("Credentials removed successfully.")
     else:
@@ -69,7 +74,8 @@ async def remove_auth(bot, update):
 async def view_auth(bot, update):
     creds = get_credentials(update.from_user.id)
     if creds:
-        await update.reply_text(f"Your credentials:\nUsername: {creds['username']}\nPassword: {creds['password']}")
+        cred_list = [f"Website: {website}\nUsername: {details['username']}\nPassword: {details['password']}" for website, details in creds.items()]
+        await update.reply_text("\n\n".join(cred_list))
     else:
         await update.reply_text("No credentials found.")
 

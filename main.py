@@ -1,4 +1,3 @@
-# main.py
 import os
 import sys
 import shutil
@@ -86,8 +85,8 @@ async def webdl(_, m):
 
 @Bot.on_callback_query()
 async def callback_query_handler(bot, update: CallbackQuery):
-    data = update.data.split("|")
-    component, url = data[0], data[1]
+    data = update.data
+    component, url = data.split('|', 1)
 
     imgFlg = component == 'img'
     linkFlg = component == 'css'

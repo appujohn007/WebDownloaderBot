@@ -70,14 +70,14 @@ async def webdl(_, m):
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("HTML", callback_data=f"h|{url}"),
-                InlineKeyboardButton("CSS", callback_data=f"c|{url}"),
-                InlineKeyboardButton("Images", callback_data=f"i|{url}")
+                InlineKeyboardButton("HTML", callback_data=f"h|{url[:50]}"),
+                InlineKeyboardButton("CSS", callback_data=f"c|{url[:50]}"),
+                InlineKeyboardButton("Images", callback_data=f"i|{url[:50]}")
             ],
             [
-                InlineKeyboardButton("XML", callback_data=f"x|{url}"),
-                InlineKeyboardButton("Video", callback_data=f"v|{url}"),
-                InlineKeyboardButton("JavaScript", callback_data=f"j|{url}")
+                InlineKeyboardButton("XML", callback_data=f"x|{url[:50]}"),
+                InlineKeyboardButton("Video", callback_data=f"v|{url[:50]}"),
+                InlineKeyboardButton("JavaScript", callback_data=f"j|{url[:50]}")
             ]
         ]
     )
@@ -86,7 +86,10 @@ async def webdl(_, m):
 @Bot.on_callback_query()
 async def callback_query_handler(bot, update: CallbackQuery):
     data = update.data
-    component, url = data.split('|', 1)
+    component, url_fragment = data.split('|', 1)
+
+    # Reconstruct the URL
+    url = update.message.reply_to_message.text.split()[0]
 
     imgFlg = component == 'i'
     linkFlg = component == 'c'

@@ -70,7 +70,7 @@ async def webdl(_, m):
     auth = (credentials['username'], credentials['password']) if credentials else None
 
     msg = await m.reply('Processing...')
-    await send_progress(msg, m.chat.id, "Processing...")
+    asyncio.create_task(send_progress(msg, m.chat.id, "Processing..."))
 
     imgFlg, linkFlg, scriptFlg = parse_components(m.text)
     name = dir = str(m.chat.id)

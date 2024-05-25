@@ -106,6 +106,6 @@ def parse_components(text):
 async def send_progress(msg, chat_id, initial_text):
     for i in range(10):
         await asyncio.sleep(1)
-        await Bot.edit_message_text(chat_id=chat_id, message_id=msg.message_id, text=f"{initial_text}\nProgress: {i*10}%")
+        await Bot.edit_message_text(chat_id=chat_id, message_id=msg.id, text=f"{initial_text}\nProgress: {i*10}%")
 
 Bot.run()

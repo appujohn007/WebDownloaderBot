@@ -1,5 +1,4 @@
 import os
-import sys
 import shutil
 import requests
 from pyrogram import Client, filters
@@ -39,7 +38,7 @@ START_BTN = InlineKeyboardMarkup(
     ]]
 )
 
-@Bot.on_message(filters.command(["start"]))
+@Bot.on_message(filters.command("start"))
 async def start(bot, update):
     text = START_TXT.format(update.from_user.mention)
     reply_markup = START_BTN
@@ -49,7 +48,7 @@ async def start(bot, update):
         reply_markup=reply_markup
     )
 
-@Bot.on_message(filters.command(["auth"]))
+@Bot.on_message(filters.command("auth"))
 async def auth(bot, update):
     if len(update.command) != 2 or ':' not in update.command[1]:
         return await update.reply_text("Please send your username and password in the format 'username:password'")
@@ -58,7 +57,7 @@ async def auth(bot, update):
     add_credentials(update.from_user.id, username, password)
     await update.reply_text("Credentials saved successfully.")
 
-@Bot.on_message(filters.command(["remove_auth"]))
+@Bot.on_message(filters.command("remove_auth"))
 async def remove_auth(bot, update):
     success = remove_credentials(update.from_user.id)
     if success:
@@ -66,7 +65,7 @@ async def remove_auth(bot, update):
     else:
         await update.reply_text("No credentials found to remove.")
 
-@Bot.on_message(filters.command(["view_auth"]))
+@Bot.on_message(filters.command("view_auth"))
 async def view_auth(bot, update):
     creds = get_credentials(update.from_user.id)
     if creds:
@@ -74,7 +73,7 @@ async def view_auth(bot, update):
     else:
         await update.reply_text("No credentials found.")
 
-@Bot.on_message(filters.private & filters.text & ~filters.regex('/start|/auth|/remove_auth|/view_auth'))
+@Bot.on_message(filters.private & filters.text & ~filters.command(["start", "auth", "remove_auth", "view_auth"]))
 async def webdl(_, m):
     url = m.text.strip()
 
@@ -88,14 +87,14 @@ async def webdl(_, m):
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("HTML", callback_data=f"h|{url[:50]}"),
-                InlineKeyboardButton("CSS", callback_data=f"c|{url[:50]}"),
-                InlineKeyboardButton("Images", callback_data=f"i|{url[:50]}")
+                InlineKeyboardButton("HTML", callback_data=f"h|{url}"),
+                InlineKeyboardButton("CSS", callback_data=f"c|{url}"),
+                InlineKeyboardButton("Images", callback_data=f"i|{url}")
             ],
             [
-                InlineKeyboardButton("XML", callback_data=f"x|{url[:50]}"),
-                InlineKeyboardButton("Video", callback_data=f"v|{url[:50]}"),
-                InlineKeyboardButton("JS", callback_data=f"j|{url[:50]}")
+                InlineKeyboardButton("XML", callback_data=f"x|{url}"),
+                InlineKeyboardButton("Video", callback_data=f"v|{url}"),
+                InlineKeyboardButton("JS", callback_data=f"j|{url}")
             ]
         ]
     )

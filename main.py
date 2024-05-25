@@ -88,14 +88,14 @@ async def webdl(_, m):
     keyboard = InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton("HTML", callback_data=f"h|{url}"),
-                InlineKeyboardButton("CSS", callback_data=f"c|{url}"),
-                InlineKeyboardButton("Images", callback_data=f"i|{url}")
+                InlineKeyboardButton("HTML", callback_data=f"h|{url[:50]}"),
+                InlineKeyboardButton("CSS", callback_data=f"c|{url[:50]}"),
+                InlineKeyboardButton("Images", callback_data=f"i|{url[:50]}")
             ],
             [
-                InlineKeyboardButton("XML", callback_data=f"x|{url}"),
-                InlineKeyboardButton("Video", callback_data=f"v|{url}"),
-                InlineKeyboardButton("JS", callback_data=f"j|{url}")
+                InlineKeyboardButton("XML", callback_data=f"x|{url[:50]}"),
+                InlineKeyboardButton("Video", callback_data=f"v|{url[:50]}"),
+                InlineKeyboardButton("JS", callback_data=f"j|{url[:50]}")
             ]
         ]
     )
@@ -122,22 +122,14 @@ async def callback_query_handler(bot, update: CallbackQuery):
     if not res:
         return await update.message.reply('Something went wrong!')
 
+    zip_filename = f"{name}.zip"
     shutil.make_archive(name, 'zip', base_dir=dir)
-    await update.message.reply_document(name+'.zip', caption=summary)
+    await update.message.reply_document(zip_filename, caption=summary)
 
     shutil.rmtree(dir)
-    os.remove(name+'.zip')
+    os.remove(zip_filename)
 
     print("Download completed successfully!")  # Debug statement
-
-def parse_components(text):
-    components = text.split()
-    imgFlg = 'img' in components
-    linkFlg = 'css' in components
-    scriptFlg = 'script' in components
-    videoFlg = 'video' in components
-    xmlFlg = 'xml' in components
-    return imgFlg, linkFlg, scriptFlg, videoFlg, xmlFlg
 
 def is_valid_url(url):
     try:
@@ -145,20 +137,5 @@ def is_valid_url(url):
         return response.status_code == 200
     except requests.RequestException:
         return False
-
-async def send_progress(msg, chat_id, initial_text):
-    try:
-        for i in range(10):
-            await asyncio.sleep(1)
-            try:
-                await Bot.edit_message_text(chat_id=chat_id, message_id=msg.id, text=f"{initial_text}\nProgress: {i*10}%")
-            except Exception as e:
-                if "MESSAGE_ID_INVALID" in str(e):
-                    print(f"Message ID invalid: {e}", file=sys.stderr)
-                    break
-                print(f"Error updating progress: {e}", file=sys.stderr)
-                continue
-    except Exception as e:
-        print(f"Error in send_progress loop: {e}", file=sys.stderr)
 
 Bot.run()

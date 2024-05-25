@@ -1,5 +1,3 @@
-# auth.py
-
 import os
 import json
 
@@ -17,7 +15,7 @@ def save_auth_data(data):
 
 def add_credentials(user_id, username, password):
     data = load_auth_data()
-    data[user_id] = {'username': username, 'password': password}
+    data[str(user_id)] = {'username': username, 'password': password}
     save_auth_data(data)
 
 def get_credentials(user_id):
@@ -29,3 +27,5 @@ def remove_credentials(user_id):
     if str(user_id) in data:
         del data[str(user_id)]
         save_auth_data(data)
+        return True
+    return False

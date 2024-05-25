@@ -1,5 +1,5 @@
 import os
-import sys  # Ensure sys is imported
+import sys
 import shutil
 import requests
 from pyrogram import Client, filters
@@ -94,19 +94,19 @@ async def webdl(_, m):
     os.remove(name+'.zip')
     progress_task.cancel()
 
-def is_valid_url(url):
-    try:
-        response = requests.head(url, timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
-
 def parse_components(text):
     components = text.split()[1:]
     imgFlg = 'img' in components
     linkFlg = 'css' in components
     scriptFlg = 'script' in components
     return imgFlg, linkFlg, scriptFlg
+
+def is_valid_url(url):
+    try:
+        response = requests.head(url, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
 
 async def send_progress(msg, chat_id, initial_text):
     try:

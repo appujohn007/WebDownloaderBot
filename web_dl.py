@@ -1,6 +1,6 @@
 import os
 import re
-import sys
+import sys  # Make sure to import sys here as well if needed
 import requests
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -60,6 +60,7 @@ class urlDownloader(object):
                     for chunk in filebin.iter_content(chunk_size=8192):
                         if chunk:
                             file.write(chunk)
+                print(f"Successfully downloaded {fileurl} to {filepath}")  # Debug statement
                 return True
             except requests.RequestException as exc:
                 print(f"Attempt {attempt + 1} failed for {fileurl}: {exc}", file=sys.stderr)

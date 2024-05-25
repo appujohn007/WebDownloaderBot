@@ -70,7 +70,7 @@ async def webdl(_, m):
     auth = (credentials['username'], credentials['password']) if credentials else None
 
     msg = await m.reply('Processing...')
-    asyncio.create_task(send_progress(msg, m.chat.id, "Processing..."))
+    await send_progress(msg, m.chat.id, "Processing...")
 
     imgFlg, linkFlg, scriptFlg = parse_components(m.text)
     name = dir = str(m.chat.id)
@@ -107,8 +107,12 @@ async def send_progress(msg, chat_id, initial_text):
     try:
         for i in range(10):
             await asyncio.sleep(1)
-            await Bot.edit_message_text(chat_id=chat_id, message_id=msg.id, text=f"{initial_text}\nProgress: {i*10}%")
+            try:
+                await Bot.edit_message_text(chat_id=chat_id, message_id=msg.id, text=f"{initial_text}\nProgress: {i*10}%")
+            except Exception as e:
+                print(f"Error updating progress: {e}", file=sys.stderr)
+                break
     except Exception as e:
-        print(f"Error updating progress: {e}")
+        print(f"Error in send_progress loop: {e}", file=sys.stderr)
 
 Bot.run()

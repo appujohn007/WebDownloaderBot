@@ -29,6 +29,7 @@ class urlDownloader(object):
         """Save the web page components based on the input URL and dir name."""
         try:
             response = self.session.get(url, auth=self.auth)
+            response.raise_for_status()
             self.soup = BeautifulSoup(response.text, features="lxml")
             if not os.path.exists(pagefolder):
                 os.mkdir(pagefolder)
@@ -82,6 +83,7 @@ class urlDownloader(object):
                 filepath = os.path.join(pagefolder, filename)
                 res[inner] = os.path.join(os.path.basename(pagefolder), filename)
                 if not os.path.isfile(filepath):
+                    print(f"Downloading {fileurl} to {filepath}")  # Debug statement
                     futures.append(executor.submit(self._download_file, fileurl, filepath))
             for future in futures:
                 if future.result():

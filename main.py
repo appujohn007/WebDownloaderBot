@@ -91,7 +91,7 @@ async def callback_query_handler(bot, update: CallbackQuery):
         os.makedirs(dir)
 
   
-    obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, htmlFlg=htmlFlg, file_size_limit=10*1024*1024, auth=auth)
+    obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, htmlFlg=htmlFlg, file_size_limit=10*1024*1024)
     res, summary = obj.savePage(url, dir)
     if not res:
         return await update.message.reply('Something went wrong!')

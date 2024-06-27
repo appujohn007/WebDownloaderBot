@@ -4,9 +4,8 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from web_dl import urlDownloader
-from auth import add_credentials, get_credentials, remove_credentials
 
-# Bot configuration using environment variables
+
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_ID = os.environ.get("API_ID")
 API_HASH = os.environ.get("API_HASH")
@@ -26,9 +25,7 @@ I can download all the components (.html, .css, img, xml, video, javascript..) f
 Send any URL, optionally with the components you want to download. For example:
 'https://www.google.com img,css,script'
 
-Use /auth username:password to add your authentication credentials.
-Use /remove_auth to remove your authentication credentials.
-Use /view_auth to view your stored authentication credentials.
+
 """
 
 START_BTN = InlineKeyboardMarkup(
@@ -47,30 +44,7 @@ async def start(bot, update):
         reply_markup=reply_markup
     )
 
-@Bot.on_message(filters.command(["auth"]))
-async def auth(bot, update):
-    if len(update.command) != 2 or ':' not in update.command[1]:
-        return await update.reply_text("Please send your username and password in the format 'username:password'")
-    
-    username, password = update.command[1].split(":", 1)
-    add_credentials(update.from_user.id, username, password)
-    await update.reply_text("Credentials saved successfully.")
 
-@Bot.on_message(filters.command(["remove_auth"]))
-async def remove_auth(bot, update):
-    success = remove_credentials(update.from_user.id)
-    if success:
-        await update.reply_text("Credentials removed successfully.")
-    else:
-        await update.reply_text("No credentials found to remove.")
-
-@Bot.on_message(filters.command(["view_auth"]))
-async def view_auth(bot, update):
-    creds = get_credentials(update.from_user.id)
-    if creds:
-        await update.reply_text(f"Your credentials:\nUsername: {creds['username']}\nPassword: {creds['password']}")
-    else:
-        await update.reply_text("No credentials found.")
 
 @Bot.on_message(filters.private & filters.text & ~filters.regex('/start|/auth|/remove_auth|/view_auth'))
 async def webdl(_, m):
@@ -115,7 +89,7 @@ async def callback_query_handler(bot, update: CallbackQuery):
     if not os.path.isdir(dir):
         os.makedirs(dir)
 
-    auth = get_credentials(update.from_user.id)
+  
     obj = urlDownloader(imgFlg=imgFlg, linkFlg=linkFlg, scriptFlg=scriptFlg, videoFlg=videoFlg, xmlFlg=xmlFlg, htmlFlg=htmlFlg, file_size_limit=10*1024*1024, auth=auth)
     res, summary = obj.savePage(url, dir)
     if not res:

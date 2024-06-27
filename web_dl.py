@@ -34,7 +34,7 @@ class urlDownloader(object):
     def savePage(self, url, pagefolder='page'):
         """Save the web page components based on the input URL and dir name."""
         try:
-            response = self.session.get(url, auth=self.auth)
+            response = self.session.get(url)
             response.raise_for_status()
             self.soup = BeautifulSoup(response.text, features="lxml")
             if not os.path.exists(pagefolder):
@@ -82,7 +82,7 @@ class urlDownloader(object):
         filename = os.path.join(folder, name)
         print(f"Downloading {fileurl} to {filename}")  # Debug statement
         try:
-            response = self.session.get(fileurl, stream=True, auth=self.auth)
+            response = self.session.get(fileurl, stream=True)
             response.raise_for_status()
             content_length = response.headers.get('Content-Length')
             if content_length and self.file_size_limit and int(content_length) > self.file_size_limit:

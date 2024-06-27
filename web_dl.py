@@ -19,9 +19,8 @@ class urlDownloader(object):
         self.htmlFlg = htmlFlg
         self.file_size_limit = file_size_limit
         self.max_retries = max_retries
-        self.auth = auth
         self.linkType = ('css', 'png', 'ico', 'jpg', 'jpeg', 'mov', 'ogg', 'gif', 'xml', 'js')
-        self.videoType = ('mp4', 'webm', 'ogg')
+        self.videoType = ('mp4', 'webm', 'ogg', 'mkv')
         self.summary = {
             'images': 0,
             'links': 0,

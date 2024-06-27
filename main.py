@@ -4,11 +4,12 @@ import requests
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from web_dl import urlDownloader
+from config import API_HASH, API_ID, BOT_TOKEN
 
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-API_ID = os.environ.get("API_ID")
-API_HASH = os.environ.get("API_HASH")
+BOT_TOKEN = BOT_TOKEN
+API_ID = API_ID
+API_HASH = API_HASH
 
 Bot = Client(
     "WebDL-Bot",
